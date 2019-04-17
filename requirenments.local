@@ -1,0 +1,10 @@
+
+# environment spell
+pylint
+autopep8
+
+# environment listing
+chardet
+csv
+json
+pyyaml
