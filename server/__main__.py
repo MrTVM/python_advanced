@@ -2,6 +2,7 @@ import json
 import yaml
 import socket
 import argparse
+import logging
 
 
 from setting import (
@@ -25,15 +26,15 @@ def check_validate(request, server_actions):
             try:
                 return controller(request)
             except Exception as err:
-                print(err)
+                logger.critical(err)
                 return make_response(
                     request, 500, 'Internal server error'
                 )
         else:
-            print(f'Action with name { action_name } does not exists')
+            logger.error(f'Action with name { action_name } does not exists')
             return make_404(request)
     else:
-        print(f'Request is not valid')
+        logger.error('Request is not valid')
         return make_400(request)
 
 
@@ -41,6 +42,7 @@ encoding = ENCODING
 host = HOST
 port = PORT
 buffersize = BUFFERSIZE
+file_name = 'server.log'
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
@@ -58,19 +60,33 @@ if args.config:
         port = conf.get('port', port)
         buffersize = conf.get('buffersize', buffersize)
 
+
+logger = logging.getLogger('main')
+
+formatter = logging.Formatter(
+    "%(asctime)s - %(levelname)s - %(message)s"
+)
+
+handler = logging.FileHandler(file_name, encoding=encoding)
+handler.setLevel(logging.DEBUG)
+handler.setFormatter(formatter)
+
+logger.setLevel(logging.DEBUG)
+logger.addHandler(handler)
+
 try:
     sock = socket.socket()
     sock.bind((host, port))
     sock.listen(5)
     server_actions = get_server_actions()
 
-    print('Server started')
+    logger.info('Server started')
 
     while True:
         client, address = sock.accept()
-        print(
-            'Client with address {} was detected'.format(address)
-        )
+
+        logger.info(f'Client with address { address } was detected')
+
         b_request = client.recv(buffersize)
         request = json.loads(b_request.decode(encoding))
 
@@ -81,5 +97,5 @@ try:
         
         client.close()
 except KeyboardInterrupt:
-    print('Server closed')
+    logger.info('Server closed')
 
