@@ -1,9 +1,9 @@
 from datetime import datetime
-from echo.controllers import get_echo
+from protocol import (make_400)
 
 
-def test_get_echo():
-    action_name = 'echo'
+def test_make_400():
+    action_name = 'user'
     data = 'some data'
 
     request = {
@@ -17,11 +17,10 @@ def test_get_echo():
         'user': None,
         'time': None,
         'data': data,
-        'code': 200
+        'code': 400
     }
 
-    response = get_echo(request)
+    response = make_400(request)
 
-    assert expected.get('data') == response.get('data')
-
+    assert expected.get('code') == response.get('code')
 

@@ -50,6 +50,7 @@ parser.add_argument(
 
 args = parser.parse_args()
 
+
 if args.config:
     with open(args.config) as file:
         conf = yaml.load(file, Loader=yaml.Loader)

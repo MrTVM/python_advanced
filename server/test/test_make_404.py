@@ -1,8 +1,8 @@
 from datetime import datetime
-from echo.controllers import get_echo
+from protocol import (make_404)
 
 
-def test_get_echo():
+def test_make_404():
     action_name = 'echo'
     data = 'some data'
 
@@ -17,11 +17,10 @@ def test_get_echo():
         'user': None,
         'time': None,
         'data': data,
-        'code': 200
+        'code': 404
     }
 
-    response = get_echo(request)
+    response = make_404(request)
 
-    assert expected.get('data') == response.get('data')
-
+    assert expected.get('code') == response.get('code')
 
