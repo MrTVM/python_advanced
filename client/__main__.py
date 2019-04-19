@@ -2,6 +2,9 @@ import json
 import yaml
 import socket
 import argparse
+import logging
+
+
 from setting import (
     ENCODING, HOST, PORT, BUFFERSIZE
 )
@@ -10,6 +13,7 @@ encoding = ENCODING
 host = HOST
 port = PORT
 buffersize = BUFFERSIZE
+file_name = 'client.log'
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
@@ -26,13 +30,28 @@ if args.config:
         port = conf.get('port', port)
         buffersize = conf.get('buffersize', buffersize)
 
+logger = logging.getLogger('main')
+
+formatter = logging.Formatter(
+    "%(asctime)s - %(levelname)s - %(message)s"
+)
+
+handler = logging.FileHandler(file_name, encoding=encoding)
+handler.setLevel(logging.DEBUG)
+handler.setFormatter(formatter)
+
+logger.setLevel(logging.DEBUG)
+logger.addHandler(handler)
+
 try:
     sock = socket.socket()
     sock.connect((host, port))
     
-    print('Client started')
+    logger.info('Server started')
 
     user_value = input('Enter data to send: ')
+    user_action = 'echo'
+    
     request = json.dumps(
         {'data': user_value}
     )
@@ -43,9 +62,16 @@ try:
         b_answer.decode(encoding)
     )
 
-    print(response)
+    if response.get('code') == 200:
+        print(response)
+    elif response.get('code') == 400:
+        print('Request is not valid')
+        logger.error('Request is not valid')
+    elif response.get('code') == 404:
+        print(f'Action with name { user_action } does not exists')
+        logger.error(f'Action with name { user_action } does not exists')
 
     sock.close()
 except KeyboardInterrupt:
-    print('Client closed')
+    logger.info('Client closed')
 
