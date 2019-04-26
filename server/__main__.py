@@ -26,15 +26,15 @@ def check_validate(request, server_actions):
             try:
                 return controller(request)
             except Exception as err:
-                logger.critical(err)
+                logging.critical(err)
                 return make_response(
                     request, 500, 'Internal server error'
                 )
         else:
-            logger.error(f'Action with name { action_name } does not exists')
+            logging.error(f'Action with name { action_name } does not exists')
             return make_404(request)
     else:
-        logger.error('Request is not valid')
+        logging.error('Request is not valid')
         return make_400(request)
 
 
@@ -61,18 +61,15 @@ if args.config:
         buffersize = conf.get('buffersize', buffersize)
 
 
-logger = logging.getLogger('main')
-
-formatter = logging.Formatter(
-    "%(asctime)s - %(levelname)s - %(message)s"
+logging.basicConfig(
+    level = logging.DEBUG,
+    format = '%(asctime)s - %(levelname)s - %(message)s',
+    handlers = [
+        logging.FileHandler(file_name, encoding=ENCODING),
+        logging.StreamHandler()
+    ]
 )
 
-handler = logging.FileHandler(file_name, encoding=encoding)
-handler.setLevel(logging.DEBUG)
-handler.setFormatter(formatter)
-
-logger.setLevel(logging.DEBUG)
-logger.addHandler(handler)
 
 try:
     sock = socket.socket()
@@ -80,12 +77,12 @@ try:
     sock.listen(5)
     server_actions = get_server_actions()
 
-    logger.info('Server started')
+    logging.info('Server started')
 
     while True:
         client, address = sock.accept()
 
-        logger.info(f'Client with address { address } was detected')
+        logging.info(f'Client with address { address } was detected')
 
         b_request = client.recv(buffersize)
         request = json.loads(b_request.decode(encoding))
@@ -97,5 +94,5 @@ try:
         
         client.close()
 except KeyboardInterrupt:
-    logger.info('Server closed')
+    logging.info('Client closed')
 

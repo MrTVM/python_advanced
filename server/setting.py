@@ -5,5 +5,6 @@ BUFFERSIZE = 1024
 
 INSTALLED_MODULES = [
     'echo',
+    'errors'
 ]
 

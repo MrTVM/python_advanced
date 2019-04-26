@@ -4,7 +4,7 @@ import socket
 import argparse
 import logging
 
-
+from datetime import datetime
 from setting import (
     ENCODING, HOST, PORT, BUFFERSIZE
 )
@@ -49,11 +49,15 @@ try:
     
     logger.info('Server started')
 
+    user_action = input('Enter action name: ')
     user_value = input('Enter data to send: ')
-    user_action = 'echo'
     
     request = json.dumps(
-        {'data': user_value}
+        {
+            'action': user_action, 
+            'data': user_value,
+            'time': datetime.now().timestamp()
+        }
     )
 
     sock.send(request.encode(encoding))
