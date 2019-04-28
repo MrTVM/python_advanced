@@ -7,6 +7,7 @@ import socket
 import select
 import argparse
 import logging
+import threading
 
 
 from setting import (
@@ -51,6 +52,16 @@ logging.basicConfig(
 requests = []
 connections = []
 
+
+def read(client, requests, buffersize):
+    b_request = client.recv(buffersize)
+    requests.append(b_request)
+
+
+def write(client, response):
+    client.send(response)
+
+
 try:
     sock = socket.socket()
     sock.bind((host, port))
@@ -73,15 +84,24 @@ try:
             rlist, wlist, xlist = [], [], []
 
         for r_client in rlist:
-            b_request =r_client.recv(buffersize)
-            requests.append(b_request)
+            r_tread = threading.Thread(
+                target=read,
+                args=(r_client, requests, buffersize),
+                daemon=True
+            )
+            r_tread.start()
 
         if requests:
             b_request = requests.pop()
             b_response = handle_default_request(b_request)
 
             for w_client in wlist:
-                w_client.send(b_response)
+                w_thread = threading.Thread(
+                    target=write,
+                    args=(w_client, b_response),
+                    daemon=True
+                )
+                w_thread.start()
         
 except KeyboardInterrupt:
     logging.info('Client closed')
