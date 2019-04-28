@@ -1,4 +1,4 @@
 ENCODING = 'utf-8'
 HOST = 'localhost'
-PORT = 8000
+PORT = 8888
 BUFFERSIZE = 1024
