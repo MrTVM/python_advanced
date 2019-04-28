@@ -3,6 +3,8 @@ import yaml
 import socket
 import argparse
 import logging
+import zlib
+import hashlib
 
 from datetime import datetime
 from setting import (
@@ -19,6 +21,10 @@ parser = argparse.ArgumentParser()
 parser.add_argument(
     '-c', '--config', type=str,
     help='Sets run configuration'
+)
+
+parser.add_argument(
+    '-m', '--mode', type=str, default='w'
 )
 
 args = parser.parse_args()
@@ -48,34 +54,45 @@ try:
     sock.connect((host, port))
     
     logger.info('Server started')
-
-    user_action = input('Enter action name: ')
-    user_value = input('Enter data to send: ')
     
-    request = json.dumps(
-        {
-            'action': user_action, 
-            'data': user_value,
-            'time': datetime.now().timestamp()
-        }
-    )
+    
+    if args.mode == 'w':
+        while True:
+            hash_obj = hashlib.sha256()
+            hash_obj.update(
+                str(datetime.now().timestamp()).encode(ENCODING)
+            )
 
-    sock.send(request.encode(encoding))
-    b_answer = sock.recv(buffersize)
-    response = json.loads(
-        b_answer.decode(encoding)
-    )
+            user_action = input('Enter action name: ')
+            user_value = input('Enter data to send: ')
 
-    if response.get('code') == 200:
-        print(response)
-    elif response.get('code') == 400:
-        print('Request is not valid')
-        logger.error('Request is not valid')
-    elif response.get('code') == 404:
-        print(f'Action with name { user_action } does not exists')
-        logger.error(f'Action with name { user_action } does not exists')
+            request = json.dumps(
+                {
+                    'action': user_action, 
+                    'data': user_value,
+                    'time': datetime.now().timestamp()
+                }
+            )
 
-    sock.close()
+            sock.send(
+                zlib.compress(
+                    request.encode(encoding)
+                )
+            )
+    else:
+        while True:
+            b_answer = sock.recv(buffersize)
+
+            b_response = zlib.decompress(b_answer)
+
+            response = json.loads(
+                b_response.decode(encoding)
+            )
+
+            print(response)
+
+
 except KeyboardInterrupt:
     logger.info('Client closed')
+    sock.close()
 

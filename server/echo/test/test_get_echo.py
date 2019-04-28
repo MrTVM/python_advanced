@@ -5,9 +5,11 @@ from echo.controllers import get_echo
 def test_get_echo():
     action_name = 'echo'
     data = 'some data'
+    user = 'some user'
 
     request = {
         'action': action_name,
+        'user': user,
         'time': datetime.now().timestamp(),
         'data': data,
     }

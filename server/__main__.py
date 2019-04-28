@@ -1,6 +1,10 @@
 import json
+from socket import socket
+from typing import List
+
 import yaml
 import socket
+import select
 import argparse
 import logging
 
@@ -8,34 +12,7 @@ import logging
 from setting import (
     ENCODING, HOST, PORT, BUFFERSIZE
 )
-from actions import(
-    resolve, get_server_actions
-)
-from protocol import (
-    validate_request, make_response, make_400, 
-    make_404
-)
-
-
-def check_validate(request, server_actions):
-    action_name = request.get('action')
-    
-    if validate_request(request):
-        controller = resolve(action_name, server_actions)
-        if controller:
-            try:
-                return controller(request)
-            except Exception as err:
-                logging.critical(err)
-                return make_response(
-                    request, 500, 'Internal server error'
-                )
-        else:
-            logging.error(f'Action with name { action_name } does not exists')
-            return make_404(request)
-    else:
-        logging.error('Request is not valid')
-        return make_400(request)
+from handlers import handle_default_request
 
 
 encoding = ENCODING
@@ -71,28 +48,41 @@ logging.basicConfig(
 )
 
 
+requests = []
+connections = []
+
 try:
     sock = socket.socket()
     sock.bind((host, port))
-    sock.listen(5)
-    server_actions = get_server_actions()
+    sock.settimeout(0.1)
+    sock.listen(10)
 
     logging.info('Server started')
 
     while True:
-        client, address = sock.accept()
+        try:
+            client, address = sock.accept()
+            logging.info(f'Client with address { address } was detected')
+            connections.append(client)
+        except:
+            pass
 
-        logging.info(f'Client with address { address } was detected')
+        if connections:
+            rlist, wlist, xlist = select.select(connections, connections, connections, 0.1)
+        else:
+            rlist, wlist, xlist = [], [], []
 
-        b_request = client.recv(buffersize)
-        request = json.loads(b_request.decode(encoding))
+        for r_client in rlist:
+            b_request =r_client.recv(buffersize)
+            requests.append(b_request)
 
-        response = check_validate(request, server_actions)
+        if requests:
+            b_request = requests.pop()
+            b_response = handle_default_request(b_request)
 
-        s_response = json.dumps(response)
-        client.send(s_response.encode(encoding))
+            for w_client in wlist:
+                w_client.send(b_response)
         
-        client.close()
 except KeyboardInterrupt:
     logging.info('Client closed')
 

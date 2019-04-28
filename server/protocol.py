@@ -28,3 +28,5 @@ def make_400(request):
 def make_404(request):
     return make_response(request, 404, 'Action is not supported')
 
+def make_403(request):
+    return make_response(request, 403, 'Accsess denied')

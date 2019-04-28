@@ -5,4 +5,5 @@ __pycache__
 .ipynb_checkpoints
 server.log
 client.log
+setting.py
 workspace.code-workspace
